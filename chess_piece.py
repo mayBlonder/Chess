@@ -27,10 +27,8 @@ class ChessPiece:
                 x_src, x_dst = x_dst+1, x_src
             # from_ind, to_ind = self.order(x_src, x_dst)
             for col in range(x_src, x_dst-1):
-                print(col)
                 if not isinstance(board[col][y_src], Empty):
                     return True, board[col][y_src]
-            print("###")
         elif abs(y_diff == 0):  # Checking if there is a piece in the way.
             # row_from, row_to = self.order(y_src, y_dst)
             if y_src < y_dst:
