@@ -176,8 +176,9 @@ class Pawn(ChessPiece):
         src = Position(from_square[0], from_square[1])
         dst = Position(to_square[0], to_square[1])
         eat_white = ((1, 1), (1, -1))
-        eat_black = ((-1, 1), (1, 1))
+        eat_black = ((-1, 1), (-1, -1))
         to_piece = board[to_square[0]][to_square[1]]
+
         if (src - dst == (1, 0) and self.get_color() == WHITE) or (
                 dst - src == (1, 0) and self.get_color() == BLACK):  # One step up
             if isinstance(to_piece, Empty):  # No piece in dst square
@@ -198,7 +199,7 @@ class Pawn(ChessPiece):
                         return True
 
         elif (src - dst in eat_white and self.get_color() == WHITE) or (
-                dst - src in eat_black and self.get_color() == BLACK):  # Eat diagonal
+                src - dst in eat_black and self.get_color() == BLACK):  # Eat diagonal
             if not isinstance(to_piece, Empty):  # There is a piece to eat
                 self.has_moved = True
                 return True
