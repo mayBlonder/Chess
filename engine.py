@@ -15,9 +15,9 @@ BLACK_KNIGHT_1 = chess_piece.Knight(BLACK, 0, 1)
 BLACK_BISHOP_1 = chess_piece.Bishop(BLACK, 0, 2)
 BLACK_QUEEN = chess_piece.Queen(BLACK, 0, 3)
 BLACK_KING = chess_piece.King(BLACK, 0, 4)
-BLACK_ROOK_2 = chess_piece.Rook(BLACK, 0, 5)
+BLACK_BISHOP_2 = chess_piece.Bishop(BLACK, 0, 5)
 BLACK_KNIGHT_2 = chess_piece.Knight(BLACK, 0, 6)
-BLACK_BISHOP_2 = chess_piece.Bishop(BLACK, 0, 7)
+BLACK_ROOK_2 = chess_piece.Rook(BLACK, 0, 7)
 BLACK_PAWNS = [chess_piece.Pawn(BLACK, 1, i) for i in range(8)]
 
 WHITE_ROOK_1 = chess_piece.Rook(WHITE, 7, 0)
@@ -25,9 +25,9 @@ WHITE_KNIGHT_1 = chess_piece.Knight(WHITE, 7, 1)
 WHITE_BISHOP_1 = chess_piece.Bishop(WHITE, 7, 2)
 WHITE_QUEEN = chess_piece.Queen(WHITE, 7, 3)
 WHITE_KING = chess_piece.King(WHITE, 7, 4)
-WHITE_ROOK_2 = chess_piece.Rook(WHITE, 7, 5)
+WHITE_BISHOP_2 = chess_piece.Bishop(WHITE, 7, 5)
 WHITE_KNIGHT_2 = chess_piece.Knight(WHITE, 7, 6)
-WHITE_BISHOP_2 = chess_piece.Bishop(WHITE, 7, 7)
+WHITE_ROOK_2 = chess_piece.Rook(WHITE, 7, 7)
 WHITE_PAWNS = [chess_piece.Pawn(WHITE, 7, i) for i in range(8)]
 EMPTY_ROW = [EMPTY] * 8
 
@@ -45,8 +45,8 @@ class GameState:
     def __init__(self):
         self.is_white_turn = True
         self.move_log = []
-        self.black_king_location = (7, 4)
-        self.white_king_location = (0, 4)
+        self.black_king_location = (0, 4)
+        self.white_king_location = (7, 4)
 
         self.black_pieces = BLACK_ROW_1 + BLACK_ROW_2
         self.white_pieces = WHITE_ROW_1 + WHITE_ROW_2
@@ -60,6 +60,7 @@ class GameState:
 
     def make_move(self, move):
         piece = move.piece_moved
+        piece.set_position(move.dst_row, move.dst_col)
         self.board[move.source_row][move.source_col] = chess_piece.Empty()  # Cleans source square
         self.board[move.dst_row][move.dst_col] = piece  # Moves piece to destination square
         self.move_log.append(move)
@@ -75,6 +76,7 @@ class GameState:
         if len(self.move_log) > 0:
             move = self.move_log.pop()
             piece = move.piece_moved
+            piece.set_position(move.source_row, move.source_col)
             self.board[move.source_row][move.source_col] = piece  # Returns piece
             self.board[move.dst_row][move.dst_col] = move.piece_captured
             self.is_white_turn = not self.is_white_turn  # Switch turns (can be done with XOR 1)
@@ -106,11 +108,20 @@ class GameState:
         if self.is_white_turn:
             for piece in self.black_pieces:
                 if piece.is_check(self.white_king_location, self.board, piece.get_position()):
+                    print("Not moving because of:")
+                    print(piece.__class__.__name__)
+                    print("white" if piece.get_color() == 0 else "black")
+                    print(self.white_king_location)
                     return True
             return False
         else:  # Black's turn
             for piece in self.white_pieces:
                 if piece.is_check(self.black_king_location, self.board, piece.get_position()):
+                    print("Not moving because of:")
+                    print(piece.__class__.__name__)
+                    print(piece.get_color())
+                    print("white" if piece.get_color() == 0 else "black")
+                    print(self.black_king_location)
                     return True
             return False
 

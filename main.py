@@ -1,24 +1,12 @@
-"""
-Eat:
-    X :
-    V :
-        Rook
-        Queen
 
-Exposing:
-    X:
-        bishop
-    V:
-        Rook
-"""
-
-# Add can't move if exposes king to check
 # Add check and mate
+# Add can't move king if square is threaten.
 # Castling, Pawn promotion and en-passant
 
 """
 Handling user input and displaying current game state.
 """
+
 import engine
 import pygame as p
 from engine import *
@@ -34,7 +22,7 @@ SQUARE_SIZE = HEIGHT // DIMENSION
 pieces = [BLACK_ROOK_1, BLACK_ROOK_2, BLACK_KNIGHT_1, BLACK_KNIGHT_2,
           BLACK_BISHOP_1, BLACK_BISHOP_2, BLACK_QUEEN, BLACK_KING,
           WHITE_ROOK_1, WHITE_ROOK_2, WHITE_KNIGHT_1, WHITE_KNIGHT_2,
-          WHITE_BISHOP_1, WHITE_BISHOP_2, WHITE_QUEEN, WHITE_KING]\
+          WHITE_BISHOP_1, WHITE_BISHOP_2, WHITE_QUEEN, WHITE_KING] \
          + BLACK_PAWNS + WHITE_PAWNS
 
 
@@ -61,21 +49,19 @@ def draw_board(screen, board):
     for row in range(DIMENSION):
         for col in range(DIMENSION):
             color = colors[((row + col) % 2)]
-            p.draw.rect(screen, color, p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE,
-                                              SQUARE_SIZE, SQUARE_SIZE))
+            location = p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+            p.draw.rect(screen, color, location)
             piece = board[row][col]
             if not isinstance(piece, chess_piece.Empty):
-                screen.blit(IMAGES[piece], p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE,
-                                                  SQUARE_SIZE, SQUARE_SIZE))
+                screen.blit(IMAGES[piece], location)
 
 
 def change_pawn_to_queen(screen, row, col, color):
+    location = p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
     if color == WHITE:
-        screen.blit(IMAGES[WHITE_QUEEN], p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE,
-                                                SQUARE_SIZE, SQUARE_SIZE))
+        screen.blit(IMAGES[WHITE_QUEEN], location)
     else:
-        screen.blit(IMAGES[WHITE_QUEEN], p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE,
-                                                SQUARE_SIZE, SQUARE_SIZE))
+        screen.blit(IMAGES[BLACK_QUEEN], location)
     p.display.update()
 
 
@@ -128,13 +114,14 @@ def main():
                     correct_color = right_color(game_state.is_white_turn, color)
                     valid_move = piece_to_move.is_valid_move(game_state.board, from_square, to_square)
                     eat_opponent_or_empty = color != move_to.get_color()
+
                     if (not correct_color) or (not valid_move) or (not eat_opponent_or_empty):
                         square_selected, player_clicks = (), []
                         continue
 
                     game_state.make_move(move)
                     if game_state.check():
-                        game_state.undo_move(move)
+                        game_state.undo_move()
                     game_state.is_white_turn = not game_state.is_white_turn  # Switch turns (can be done with XOR 1)
 
                     # Pawn promotion- TODO: change
@@ -146,10 +133,6 @@ def main():
                             change_pawn_to_queen(screen, dst_row, dst_col, color)
                         # move_made = True
                     square_selected, player_clicks = (), []
-            # elif event.type == p.KEYDOWN:
-            #     if event.key == p.K_z:  # undo when z iz pressed
-            #         game_state.undo_move()
-            #         move_made = True  # Todo: maybe remove
         # if move_made:
         #     valid_moves = game_state.get_valid_moves()
         #     move_made = False

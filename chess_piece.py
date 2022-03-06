@@ -13,59 +13,57 @@ class ChessPiece:
     def get_position(self):
         return self.position
 
+    def set_position(self, row, col):
+        self.position = (row, col)
+
     def is_valid_move(self, board, from_square, to_square):
         pass
-
-    @staticmethod
-    def is_piece_in_the_way_straight(diff, board, x_src, x_dst, y_src, y_dst):
-        x_diff = diff[1]
-        y_diff = diff[0]
-        if abs(x_diff == 0):  # Checking if there is a piece in the way.
-            if x_src < x_dst:
-                x_src, x_dst = x_src+1, x_dst
-            else:
-                x_src, x_dst = x_dst+1, x_src
-            # from_ind, to_ind = self.order(x_src, x_dst)
-            for col in range(x_src, x_dst-1):
-                if not isinstance(board[col][y_src], Empty):
-                    return True, board[col][y_src]
-        elif abs(y_diff == 0):  # Checking if there is a piece in the way.
-            # row_from, row_to = self.order(y_src, y_dst)
-            if y_src < y_dst:
-                y_src, y_dst = y_src+1, y_dst
-            else:
-                x_src, x_dst = x_dst+1, x_src
-            for row in range(y_src, y_dst):
-                if not isinstance(board[x_src][row], Empty):
-                    return True, board[x_src][row]
-        return False, Empty
 
     def is_check(self, king_position, board, from_square):
         if not self.is_valid_move(board, from_square, king_position):
             return False
 
-        src = Position(from_square[0], from_square[1])
-        dst = Position(king_position[0], king_position[1])
-        x_src, y_src = src.get_x(), src.get_y()
-        x_dst, y_dst = dst.get_x(), dst.get_y()
-        diff = src - dst
-        piece = self.is_piece_in_the_way_straight(diff, board, x_src, x_dst, y_src, y_dst)[1]
+        x_src, y_src = from_square
+        x_dst, y_dst = king_position
+        piece = self.is_piece_in_the_way_straight(board, x_src, x_dst, y_src, y_dst)[1]
         if isinstance(piece, King):
             return True
         return False
 
     @staticmethod
-    def order(src, dst):
-        if src > dst:
-            return dst, src
-        return src, dst
+    def is_piece_in_the_way_straight(board, x_src, x_dst, y_src, y_dst):
+        if y_src == y_dst:  # Checking if there is a piece in the way.
+            if x_src < x_dst:
+                x_src, x_dst = x_src + 1, x_dst
+            else:
+                x_src, x_dst = x_dst + 1, x_src
+            for col in range(x_src, x_dst):
+                print(col, y_src)
+                if not isinstance(board[col][y_src], Empty):
+                    return True, board[col][y_src]
+        elif x_src == x_dst:  # Checking if there is a piece in the way.
+            if y_src < y_dst:
+                y_src, y_dst = y_src + 1, y_dst
+            else:
+                y_src, y_dst = x_dst + 1, x_src
+            for row in range(y_src, y_dst):
+                print(x_src, row)
+                if not isinstance(board[x_src][row], Empty):
+                    return True, board[x_src][row]
+        return False, Empty
 
     @staticmethod
-    def is_piece_in_the_way_diag(row_from, row_to, col_from, col_to, board):
-        for row, col in zip(range(row_from + 1, row_to),
-                            range(col_from + 1, col_to)):  # Can't skip pieces
-            if not isinstance(board[row][col], Empty):
-                return True, board[row][col]
+    def is_piece_in_the_way_diagonal(x_src, x_dst, y_src, y_dst, board):
+        x_direction = 1 if x_src < x_dst else -1
+        y_direction = 1 if y_src < y_dst else -1
+        x_src += x_direction
+        y_src += y_direction
+        while x_src <= x_dst + x_direction and y_src <= y_dst + y_direction:
+            print(x_src, y_src)
+            if not isinstance(board[x_src][y_src], Empty):
+                return True, board[x_src][y_src]
+            x_src += x_direction
+            y_src += y_direction
         return False, Empty
 
 
@@ -82,16 +80,16 @@ class Rook(ChessPiece):
         super().__init__(color, row, col)
 
     def is_valid_move(self, board, from_square, to_square):
-        src = Position(from_square[0], from_square[1])
-        dst = Position(to_square[0], to_square[1])
-        x_src, y_src = src.get_x(), src.get_y()
-        x_dst, y_dst = dst.get_x(), dst.get_y()
-        diff = src - dst
-        if self.is_piece_in_the_way_straight(diff, board, x_src, x_dst, y_src, y_dst)[0]:
+        x_src, y_src = from_square
+        x_dst, y_dst = to_square
+
+        if not (x_src == x_dst or y_src == y_dst):
             return False
 
-        return (abs(diff[0]) > 0 and abs(diff[1]) == 0) or (
-                abs(diff[0]) == 0 and abs(diff[1]) > 0)
+        if self.is_piece_in_the_way_straight(board, x_src, x_dst, y_src, y_dst)[0]:
+            return False
+
+        return True
 
 
 class Knight(ChessPiece):
@@ -99,11 +97,13 @@ class Knight(ChessPiece):
         super().__init__(color, row, col)
 
     def is_valid_move(self, board, from_square, to_square):
-        src = Position(from_square[0], from_square[1])
-        dst = Position(to_square[0], to_square[1])
-        diff = src - dst
-        return (abs(diff[0]) == 2 and abs(diff[1]) == 1) or (
-                abs(diff[0]) == 1 and abs(diff[1]) == 2)
+        x_src, y_src = from_square
+        x_dst, y_dst = to_square
+
+        if (abs(x_dst - x_src) == 1 and abs(y_dst - y_src) == 2) or (
+                abs(x_dst - x_src) == 2 and abs(y_dst - y_src) == 1):
+            return True
+        return False
 
     def is_check(self, king_position, board, from_square):
         return self.is_valid_move(board, from_square, king_position)
@@ -114,18 +114,24 @@ class Bishop(ChessPiece):
         super().__init__(color, row, col)
 
     def is_valid_move(self, board, from_square, to_square):
-        src = Position(from_square[0], from_square[1])
-        dst = Position(to_square[0], to_square[1])
-        x_src, y_src = src.get_x(), src.get_y()
-        x_dst, y_dst = dst.get_x(), dst.get_y()
-        diff = src - dst
-        row_from, row_to = self.order(x_src, x_dst)
-        col_from, col_to = self.order(y_src, y_dst)
+        x_src, y_src = from_square
+        x_dst, y_dst = to_square
 
-        if self.is_piece_in_the_way_diag(row_from, row_to, col_from, col_to, board)[0]:
+        if not abs(x_dst - x_src) == abs(y_dst - y_src):  # If not moving diagonal.
             return False
 
-        return abs(diff[0]) == abs(diff[1])
+        if self.is_piece_in_the_way_diagonal(x_src, x_dst, y_src, y_dst, board)[0]:
+            return False
+
+        return True
+
+    def is_check(self, king_position, board, from_square):
+        x_src, y_src = from_square
+        x_dst, y_dst = king_position
+        if abs(x_dst - x_src) == abs(y_dst - y_src):
+            if not self.is_piece_in_the_way_diagonal(x_src, x_dst, y_src, y_dst, board)[0]:
+                return True
+        return False
 
 
 class Queen(ChessPiece):
@@ -133,19 +139,29 @@ class Queen(ChessPiece):
         super().__init__(color, row, col)
 
     def is_valid_move(self, board, from_square, to_square):
-        src = Position(from_square[0], from_square[1])
-        dst = Position(to_square[0], to_square[1])
-        x_src, y_src = src.get_x(), src.get_y()
-        x_dst, y_dst = dst.get_x(), dst.get_y()
-        col_from, row_from = from_square
-        col_to, row_to = to_square
-        diff = src - dst
-        if self.is_piece_in_the_way_straight(diff, board, x_src, x_dst, y_src, y_dst)[0]:
-            return False
+        x_src, y_src = from_square
+        x_dst, y_dst = to_square
 
-        if self.is_piece_in_the_way_diag(row_from, row_to, col_from, col_to, board)[0]:
-            return False
-        return True
+        if x_src == x_dst or y_src == y_dst:  # Moving straight - up/ down/ left/ right
+            if self.is_piece_in_the_way_straight(board, x_src, x_dst, y_src, y_dst)[0]:
+                return False
+            return True
+        elif abs(x_dst - x_src) == abs(y_dst - y_src):  # Moving diagonal
+            if self.is_piece_in_the_way_diagonal(x_src, x_dst, y_src, y_dst, board)[0]:
+                return False
+            return True
+        return False
+
+    def is_check(self, king_position, board, from_square):
+        x_src, y_src = from_square
+        x_dst, y_dst = king_position
+        if abs(x_dst - x_src) == abs(y_dst - y_src):  # Diagonal
+            if not self.is_piece_in_the_way_diagonal(x_src, x_dst, y_src, y_dst, board)[0]:
+                return True
+        elif x_src == x_dst or y_src == y_dst:  # Straight
+            if not self.is_piece_in_the_way_straight(board, x_src, x_dst, y_src, y_dst)[0]:
+                return True
+        return False
 
 
 class King(ChessPiece):
@@ -154,12 +170,10 @@ class King(ChessPiece):
         self.has_moved = False
 
     def is_valid_move(self, board, from_square, to_square):
-        src = Position(from_square[0], from_square[1])
-        dst = Position(to_square[0], to_square[1])
-        options = ((1, 0), (0, 1), (0, -1), (-1, 0),
-                   (-1, -1), (-1, 1), (1, -1), (1, 1))
+        x_src, y_src = from_square
+        x_dst, y_dst = to_square
 
-        if src - dst in options:
+        if abs(x_dst - x_src) <= 1 and abs(y_dst - y_src) <= 1:
             self.has_moved = True
             return True
         return False
