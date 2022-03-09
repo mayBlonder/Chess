@@ -1,7 +1,8 @@
-
-# Add check and mate
-# Add can't move king if square is threaten.
-# Castling, Pawn promotion and en-passant
+# TODO
+# check
+# mate
+# Castling
+# en-passant
 
 """
 Handling user input and displaying current game state.
@@ -13,16 +14,15 @@ from engine import *
 from chess_piece import Pawn
 
 IMAGES = {}
-WIDTH = 512
-HEIGHT = 512
 DIMENSION = 8
 MAX_FPS = 15  # for animation
+WIDTH = HEIGHT = 512
 SQUARE_SIZE = HEIGHT // DIMENSION
 
 pieces = [BLACK_ROOK_1, BLACK_ROOK_2, BLACK_KNIGHT_1, BLACK_KNIGHT_2,
-          BLACK_BISHOP_1, BLACK_BISHOP_2, BLACK_QUEEN, BLACK_KING,
+          BLACK_BISHOP_1, BLACK_BISHOP_2, BLACK_QUEENS[0], BLACK_KING,
           WHITE_ROOK_1, WHITE_ROOK_2, WHITE_KNIGHT_1, WHITE_KNIGHT_2,
-          WHITE_BISHOP_1, WHITE_BISHOP_2, WHITE_QUEEN, WHITE_KING] \
+          WHITE_BISHOP_1, WHITE_BISHOP_2, WHITE_QUEENS[0], WHITE_KING] \
          + BLACK_PAWNS + WHITE_PAWNS
 
 
@@ -40,29 +40,29 @@ def load_images():
 
 #  responsible for all the graphics
 def draw_game_state(screen, game_state):
-    draw_board(screen, game_state.board)
-
-
-# Draw squares on board
-def draw_board(screen, board):
     colors = [p.Color("white"), p.Color("light blue")]
     for row in range(DIMENSION):
         for col in range(DIMENSION):
             color = colors[((row + col) % 2)]
             location = p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
             p.draw.rect(screen, color, location)
-            piece = board[row][col]
+            piece = game_state.board[row][col]
             if not isinstance(piece, chess_piece.Empty):
                 screen.blit(IMAGES[piece], location)
 
 
-def change_pawn_to_queen(screen, row, col, color):
+def change_pawn_to_queen(screen, row, col, color, game_state):
     location = p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
-    if color == WHITE:
-        screen.blit(IMAGES[WHITE_QUEEN], location)
-    else:
-        screen.blit(IMAGES[BLACK_QUEEN], location)
-    p.display.update()
+    queen = game_state.add_queen(color, row, col)
+
+    # Load image
+    pic_path = "pics\\" + int_color_to_string(queen.get_color()) + "_"
+    pic_path += "queen.png"
+    IMAGES[queen] = p.transform.scale(p.image.load(pic_path),
+                                      (SQUARE_SIZE, SQUARE_SIZE))
+    screen.blit(IMAGES[queen], location)
+    game_state.board[row][col] = queen
+    p.display.update(location)
 
 
 def right_color(is_white_turn, color):
@@ -78,8 +78,6 @@ def main():
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     game_state = GameState()
-    # valid_moves = game_state.get_valid_moves()
-    # move_made = False  # When a move is made.
     running = True
     load_images()
     # last click of the user : (row, col)
@@ -107,35 +105,35 @@ def main():
                     to_square = player_clicks[1]
 
                     move = engine.Move(from_square, to_square, game_state.board)
-                    # if move in valid_moves:
                     piece_to_move = game_state.board[src_row][src_col]
                     move_to = game_state.board[dst_row][dst_col]
                     color = piece_to_move.get_color()
+
                     correct_color = right_color(game_state.is_white_turn, color)
                     valid_move = piece_to_move.is_valid_move(game_state.board, from_square, to_square)
                     eat_opponent_or_empty = color != move_to.get_color()
+                    in_check = (game_state.is_white_turn and WHITE_KING.in_check) or (
+                            not game_state.is_white_turn and BLACK_KING.in_check
+                    )
 
-                    if (not correct_color) or (not valid_move) or (not eat_opponent_or_empty):
+                    if (not correct_color) or (not valid_move) or (not eat_opponent_or_empty) or (
+                            in_check):
                         square_selected, player_clicks = (), []
                         continue
 
                     game_state.make_move(move)
-                    if game_state.check():
+                    if game_state.caused_check():
                         game_state.undo_move()
-                    game_state.is_white_turn = not game_state.is_white_turn  # Switch turns (can be done with XOR 1)
 
-                    # Pawn promotion- TODO: change
-                    if isinstance(move_to, Pawn):
-                        color = move_to.get_color()
+                    elif isinstance(piece_to_move, Pawn):
+                        color = piece_to_move.get_color()
                         if (color == WHITE and dst_row == 0) or (
-                                color == BLACK and dst_row == 8
+                                color == BLACK and dst_row == 7
                         ):
-                            change_pawn_to_queen(screen, dst_row, dst_col, color)
-                        # move_made = True
+                            change_pawn_to_queen(screen, dst_row, dst_col, color, game_state)
+
+                    game_state.is_white_turn = not game_state.is_white_turn  # Switch turns
                     square_selected, player_clicks = (), []
-        # if move_made:
-        #     valid_moves = game_state.get_valid_moves()
-        #     move_made = False
         draw_game_state(screen, game_state)
         clock.tick(MAX_FPS)
         p.display.flip()

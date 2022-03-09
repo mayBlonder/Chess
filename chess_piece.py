@@ -30,27 +30,24 @@ class ChessPiece:
             return True
         return False
 
-    @staticmethod
-    def is_piece_in_the_way_straight(board, x_src, x_dst, y_src, y_dst):
+    def is_piece_in_the_way_straight(self, board, x_src, x_dst, y_src, y_dst):
         if y_src == y_dst:  # Checking if there is a piece in the way.
-            if x_src < x_dst:
-                x_src, x_dst = x_src + 1, x_dst
-            else:
-                x_src, x_dst = x_dst + 1, x_src
+            x_src, x_dst = self.order(x_src, x_dst)
             for col in range(x_src, x_dst):
-                print(col, y_src)
                 if not isinstance(board[col][y_src], Empty):
                     return True, board[col][y_src]
         elif x_src == x_dst:  # Checking if there is a piece in the way.
-            if y_src < y_dst:
-                y_src, y_dst = y_src + 1, y_dst
-            else:
-                y_src, y_dst = x_dst + 1, x_src
+            y_src, y_dst = self.order(y_src, y_dst)
             for row in range(y_src, y_dst):
-                print(x_src, row)
                 if not isinstance(board[x_src][row], Empty):
                     return True, board[x_src][row]
         return False, Empty
+
+    @staticmethod
+    def order(first, second):
+        if first < second:
+            return first + 1, second
+        return second + 1, first
 
     @staticmethod
     def is_piece_in_the_way_diagonal(x_src, x_dst, y_src, y_dst, board):
@@ -59,7 +56,6 @@ class ChessPiece:
         x_src += x_direction
         y_src += y_direction
         while x_src <= x_dst + x_direction and y_src <= y_dst + y_direction:
-            print(x_src, y_src)
             if not isinstance(board[x_src][y_src], Empty):
                 return True, board[x_src][y_src]
             x_src += x_direction
@@ -168,6 +164,7 @@ class King(ChessPiece):
     def __init__(self, color, row, col):
         super().__init__(color, row, col)
         self.has_moved = False
+        self.in_check = False
 
     def is_valid_move(self, board, from_square, to_square):
         x_src, y_src = from_square
