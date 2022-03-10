@@ -5,6 +5,7 @@
 -    Click on the square you want your piece to move to.
 -    -    If the move is illigal an error messsage will be printed.
 
+
 **This game supports:**
 -    All regular moves.
 -    Castling.
@@ -15,4 +16,7 @@
 **Adding:**
 -    check
 -    mate
+
+
+**Not supporting:**
 -    En-passant
