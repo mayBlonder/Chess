@@ -51,10 +51,6 @@ class GameState:
             [BLACK_ROW_1, BLACK_ROW_2, EMPTY_ROW, EMPTY_ROW,
              EMPTY_ROW, EMPTY_ROW, WHITE_ROW_1, WHITE_ROW_2])
 
-    """
-    Not working for castling, pawn promotion and en-passant.
-    """
-
     def make_move(self, move):
         piece = move.piece_moved
         piece.set_position(move.dst_row, move.dst_col)
@@ -96,6 +92,54 @@ class GameState:
                     return True
             return False
 
+    def castle(self, king, rook):
+        if king.has_moved:
+            print("ERROR: can not castling, king has moved.")
+            return
+
+        if rook.has_moved:
+            print("ERROR: can not castling, rook has moved.")
+            return
+
+        king_location = king.get_position()
+        rook_location = rook.get_position()
+
+        if not rook.is_valid_move(self.board, rook_location, king_location):
+            print("ERROR: can not castling, not a valid rook move.")
+            return
+
+        rook_x = rook_location[1]
+        first_x = rook_x
+        second_x = king_location[1]
+        king_y = king_location[0]
+
+        if first_x < second_x:
+            first_x, second_x = first_x + 1, second_x
+        else:
+            first_x, second_x = second_x + 1, first_x
+
+        # check that all squares in between are not under attack.
+        for x in range(first_x, second_x):
+            move = Move(king_location, (king_y, x), self.board)
+            self.make_move(move)
+            if self.caused_check():
+                for x_0 in range(x):
+                    self.undo_move()
+                print("ERROR: can not castling, square ({},{}) is threatened.".format(king_y, x))
+                return
+            king_location = king.get_position()
+
+        # if success - move rook also.
+        if rook_x == 7:
+            rook_target_x = 5
+        else:  # rook_x == 0
+            move = Move(king_location, (king_y, 2), self.board)
+            self.make_move(move)
+            rook_target_x = 3
+
+        move = Move(rook_location, (king_y, rook_target_x), self.board)
+        self.make_move(move)
+
     @staticmethod
     def add_queen(color, row, col):
         queen = chess_piece.Queen(color, row, col)
@@ -121,4 +165,3 @@ class Move:
         if isinstance(other, Move):
             return self.move_id == other.move_id
         return False
-

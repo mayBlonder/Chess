@@ -2,12 +2,12 @@
 # check
 # mate
 # Castling
-# en-passant
+# En-passant
 
 """
 Handling user input and displaying current game state.
 """
-
+import chess_piece
 import engine
 import pygame as p
 from engine import *
@@ -65,6 +65,23 @@ def change_pawn_to_queen(screen, row, col, color, game_state):
     p.display.update(location)
 
 
+def pre_conditions(is_white_turn, this_color, other_color):
+    correct_color = right_color(is_white_turn, this_color)
+    eat_opponent_or_empty = this_color != other_color
+
+    #  TODO: why do we need this?
+    in_check = (is_white_turn and WHITE_KING.in_check) or (
+            not is_white_turn and BLACK_KING.in_check
+    )
+
+    if not correct_color:
+        print("ERROR: not your turn.")
+        return False
+    elif not eat_opponent_or_empty:
+        print("ERROR: can not eat your own piece.")
+    return True
+
+
 def right_color(is_white_turn, color):
     if (is_white_turn and not color == WHITE) or (
             not is_white_turn and not color == BLACK):
@@ -109,28 +126,42 @@ def main():
                     move_to = game_state.board[dst_row][dst_col]
                     color = piece_to_move.get_color()
 
-                    correct_color = right_color(game_state.is_white_turn, color)
-                    valid_move = piece_to_move.is_valid_move(game_state.board, from_square, to_square)
-                    eat_opponent_or_empty = color != move_to.get_color()
-                    in_check = (game_state.is_white_turn and WHITE_KING.in_check) or (
-                            not game_state.is_white_turn and BLACK_KING.in_check
-                    )
-
-                    if (not correct_color) or (not valid_move) or (not eat_opponent_or_empty) or (
-                            in_check):
+                    if not pre_conditions(game_state.is_white_turn, color, move_to.get_color()):
                         square_selected, player_clicks = (), []
                         continue
 
-                    game_state.make_move(move)
-                    if game_state.caused_check():
-                        game_state.undo_move()
+                    #  Castling
+                    if isinstance(piece_to_move, chess_piece.King):
+                        if (src_row in (0, 7)) and (src_col == 4) and (
+                                dst_row in (0, 7)) and (dst_col in (6, 2)):
+                            if dst_col == 2:
+                                if color == WHITE:
+                                    game_state.castle(piece_to_move, WHITE_ROOK_1)
+                                else:
+                                    game_state.castle(piece_to_move, BLACK_ROOK_1)
+                            else:
+                                if color == WHITE:
+                                    game_state.castle(piece_to_move, WHITE_ROOK_2)
+                                else:
+                                    game_state.castle(piece_to_move, BLACK_ROOK_2)
 
-                    elif isinstance(piece_to_move, Pawn):
-                        color = piece_to_move.get_color()
-                        if (color == WHITE and dst_row == 0) or (
-                                color == BLACK and dst_row == 7
-                        ):
-                            change_pawn_to_queen(screen, dst_row, dst_col, color, game_state)
+                    else:
+                        valid_move = piece_to_move.is_valid_move(game_state.board, from_square, to_square)
+                        if not valid_move:
+                            print("ERROR: not a valid move for {}.".format(piece_to_move.__class__.__name__))
+                            continue
+
+                        game_state.make_move(move)
+                        if game_state.caused_check():
+                            print("ERROR: this move is causing your king to be in check.")
+                            game_state.undo_move()
+
+                        elif isinstance(piece_to_move, Pawn):
+                            color = piece_to_move.get_color()
+                            if (color == WHITE and dst_row == 0) or (
+                                    color == BLACK and dst_row == 7
+                            ):
+                                change_pawn_to_queen(screen, dst_row, dst_col, color, game_state)
 
                     game_state.is_white_turn = not game_state.is_white_turn  # Switch turns
                     square_selected, player_clicks = (), []

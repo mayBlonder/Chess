@@ -74,6 +74,10 @@ class Empty(ChessPiece):
 class Rook(ChessPiece):
     def __init__(self, color, row, col):
         super().__init__(color, row, col)
+        self.has_moved = False
+
+    def set_has_moved(self, has_moved):
+        self.has_moved = has_moved
 
     def is_valid_move(self, board, from_square, to_square):
         x_src, y_src = from_square
@@ -85,6 +89,7 @@ class Rook(ChessPiece):
         if self.is_piece_in_the_way_straight(board, x_src, x_dst, y_src, y_dst)[0]:
             return False
 
+        self.has_moved = True
         return True
 
 
@@ -166,6 +171,12 @@ class King(ChessPiece):
         self.has_moved = False
         self.in_check = False
 
+    def set_has_moved(self, has_moved):
+        self.has_moved = has_moved
+
+    def set_in_check(self, in_check):
+        self.in_check = in_check
+
     def is_valid_move(self, board, from_square, to_square):
         x_src, y_src = from_square
         x_dst, y_dst = to_square
@@ -225,8 +236,3 @@ class Position:
         col = self.col - other.col
         return col, row
 
-    def get_x(self):
-        return self.col
-
-    def get_y(self):
-        return self.row
