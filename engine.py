@@ -58,13 +58,6 @@ class GameState:
         self.board[move.dst_row][move.dst_col] = piece  # Moves piece to destination square
         self.move_log.append(move)
 
-        # TODO: not needed.
-        if isinstance(piece, chess_piece.King):  # Update king location if needed
-            if piece.get_color() == WHITE:
-                WHITE_KING.set_position(move.dst_row, move.dst_col)
-            else:
-                BLACK_KING.set_position(move.dst_row, move.dst_col)
-
     def undo_move(self):
         if len(self.move_log) > 0:
             move = self.move_log.pop()
@@ -72,13 +65,6 @@ class GameState:
             piece.set_position(move.source_row, move.source_col)
             self.board[move.source_row][move.source_col] = piece  # Returns piece
             self.board[move.dst_row][move.dst_col] = move.piece_captured
-            self.is_white_turn = not self.is_white_turn  # Switch turns (can be done with XOR 1)
-
-            if isinstance(piece, chess_piece.King):  # Update king location if needed
-                if piece.get_color() == WHITE:
-                    WHITE_KING.set_position(move.source_row, move.source_col)
-                else:
-                    BLACK_KING.set_position(move.source_row, move.source_col)
 
     def caused_check(self):
         if self.is_white_turn:

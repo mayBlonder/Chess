@@ -1,17 +1,14 @@
 # TODO
-# check
 # mate
-# Castling
-# En-passant
 
 """
 Handling user input and displaying current game state.
 """
-import chess_piece
-import engine
+
 import pygame as p
+
+from chess_piece import Pawn, Empty, King
 from engine import *
-from chess_piece import Pawn
 
 IMAGES = {}
 DIMENSION = 8
@@ -47,7 +44,7 @@ def draw_game_state(screen, game_state):
             location = p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
             p.draw.rect(screen, color, location)
             piece = game_state.board[row][col]
-            if not isinstance(piece, chess_piece.Empty):
+            if not isinstance(piece, Empty):
                 screen.blit(IMAGES[piece], location)
 
 
@@ -69,11 +66,6 @@ def pre_conditions(is_white_turn, this_color, other_color):
     correct_color = right_color(is_white_turn, this_color)
     eat_opponent_or_empty = this_color != other_color
 
-    #  TODO: why do we need this?
-    in_check = (is_white_turn and WHITE_KING.in_check) or (
-            not is_white_turn and BLACK_KING.in_check
-    )
-
     if not correct_color:
         print("ERROR: not your turn.")
         return False
@@ -87,6 +79,19 @@ def right_color(is_white_turn, color):
             not is_white_turn and not color == BLACK):
         return False
     return True
+
+
+def castling(game_state, dst_col, color, piece_to_move):
+    if dst_col == 2:
+        if color == WHITE:
+            game_state.castle(piece_to_move, WHITE_ROOK_1)
+        else:
+            game_state.castle(piece_to_move, BLACK_ROOK_1)
+    else:
+        if color == WHITE:
+            game_state.castle(piece_to_move, WHITE_ROOK_2)
+        else:
+            game_state.castle(piece_to_move, BLACK_ROOK_2)
 
 
 def main():
@@ -121,7 +126,7 @@ def main():
                     src_row, src_col = from_square
                     to_square = player_clicks[1]
 
-                    move = engine.Move(from_square, to_square, game_state.board)
+                    move = Move(from_square, to_square, game_state.board)
                     piece_to_move = game_state.board[src_row][src_col]
                     move_to = game_state.board[dst_row][dst_col]
                     color = piece_to_move.get_color()
@@ -131,30 +136,23 @@ def main():
                         continue
 
                     #  Castling
-                    if isinstance(piece_to_move, chess_piece.King):
-                        if (src_row in (0, 7)) and (src_col == 4) and (
-                                dst_row in (0, 7)) and (dst_col in (6, 2)):
-                            if dst_col == 2:
-                                if color == WHITE:
-                                    game_state.castle(piece_to_move, WHITE_ROOK_1)
-                                else:
-                                    game_state.castle(piece_to_move, BLACK_ROOK_1)
-                            else:
-                                if color == WHITE:
-                                    game_state.castle(piece_to_move, WHITE_ROOK_2)
-                                else:
-                                    game_state.castle(piece_to_move, BLACK_ROOK_2)
-
+                    if isinstance(piece_to_move, King) and (
+                            src_row in (0, 7)) and (src_col == 4) and (
+                            dst_row in (0, 7)) and (dst_col in (6, 2)):
+                        castling(game_state, dst_col, color, piece_to_move)
                     else:
                         valid_move = piece_to_move.is_valid_move(game_state.board, from_square, to_square)
                         if not valid_move:
                             print("ERROR: not a valid move for {}.".format(piece_to_move.__class__.__name__))
+                            square_selected, player_clicks = (), []
                             continue
 
                         game_state.make_move(move)
-                        if game_state.caused_check():
+                        if game_state.caused_check():  # works for check also.
                             print("ERROR: this move is causing your king to be in check.")
                             game_state.undo_move()
+                            square_selected, player_clicks = (), []
+                            continue  # added to check!!!
 
                         elif isinstance(piece_to_move, Pawn):
                             color = piece_to_move.get_color()
