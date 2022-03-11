@@ -7,8 +7,8 @@
 <li class="has-line-data" data-line-start="9" data-line-end="10">Castling.</li>
 <li class="has-line-data" data-line-start="10" data-line-end="11">Not moving a piece that causes your king to be in check.</li>
 <li class="has-line-data" data-line-start="11" data-line-end="12">Pawn promotion (to queen only).</li>
-<li class="has-line-data" data-line-start="12" data-line-end="13">check.</li>
-<li class="has-line-data" data-line-start="13" data-line-end="15">mate.</li>
+<li class="has-line-data" data-line-start="12" data-line-end="13">Check.</li>
+<li class="has-line-data" data-line-start="13" data-line-end="15">Mate.</li>
 </ul>
 <h2 class="code-line" data-line-start=15 data-line-end=16 ><a id="Not_supporting_15"></a>Not supporting</h2>
 <ul>
