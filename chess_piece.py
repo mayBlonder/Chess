@@ -67,8 +67,8 @@ class ChessPiece:
 
 
 class Empty(ChessPiece):
-    def __init__(self):
-        super().__init__(-1, -1, -1)
+    def __init__(self, row, col):
+        super().__init__(-1, row, col)
 
     def is_valid_move(self, board, from_square, to_square):
         return True

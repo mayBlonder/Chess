@@ -4,6 +4,7 @@
 """
 Handling user input and displaying current game state.
 """
+import time
 
 import pygame as p
 
@@ -62,25 +63,6 @@ def change_pawn_to_queen(screen, row, col, color, game_state):
     p.display.update(location)
 
 
-def pre_conditions(is_white_turn, this_color, other_color):
-    correct_color = right_color(is_white_turn, this_color)
-    eat_opponent_or_empty = this_color != other_color
-
-    if not correct_color:
-        print("ERROR: not your turn.")
-        return False
-    elif not eat_opponent_or_empty:
-        print("ERROR: can not eat your own piece.")
-    return True
-
-
-def right_color(is_white_turn, color):
-    if (is_white_turn and not color == WHITE) or (
-            not is_white_turn and not color == BLACK):
-        return False
-    return True
-
-
 def castling(game_state, dst_col, color, piece_to_move):
     if dst_col == 2:
         if color == WHITE:
@@ -131,7 +113,7 @@ def main():
                     move_to = game_state.board[dst_row][dst_col]
                     color = piece_to_move.get_color()
 
-                    if not pre_conditions(game_state.is_white_turn, color, move_to.get_color()):
+                    if not game_state.pre_conditions(game_state.is_white_turn, color, move_to.get_color()):
                         square_selected, player_clicks = (), []
                         continue
 
@@ -148,12 +130,22 @@ def main():
                             continue
 
                         game_state.make_move(move)
-                        if game_state.caused_check():  # works for check also.
-                            print("ERROR: this move is causing your king to be in check.")
-                            game_state.undo_move()
-                            square_selected, player_clicks = (), []
-                            continue  # added to check!!!
-
+                        if game_state.check():
+                            # if mate
+                            if game_state.mate():
+                                winner_color = not move.piece_moved.get_color()
+                                pic_path = "pics\\winner_" + int_color_to_string(winner_color) + ".png"
+                                winner_pic = p.transform.scale(p.image.load(pic_path), (WIDTH, HEIGHT))
+                                screen.blit(winner_pic, (0, 0))
+                                p.display.flip()
+                                time.sleep(3)
+                                print("MATE: the winner is: {}!".format(int_color_to_string(winner_color)))
+                                running = False
+                                continue
+                            else:
+                                print("ERROR: this move is causing your king to be in check.")
+                                square_selected, player_clicks = (), []
+                                continue
                         elif isinstance(piece_to_move, Pawn):
                             color = piece_to_move.get_color()
                             if (color == WHITE and dst_row == 0) or (

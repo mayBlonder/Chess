@@ -8,8 +8,6 @@ import chess_piece
 WHITE = 0
 BLACK = 1
 
-EMPTY = chess_piece.Empty()
-
 BLACK_ROOK_1 = chess_piece.Rook(BLACK, 0, 0)
 BLACK_KNIGHT_1 = chess_piece.Knight(BLACK, 0, 1)
 BLACK_BISHOP_1 = chess_piece.Bishop(BLACK, 0, 2)
@@ -29,7 +27,11 @@ WHITE_BISHOP_2 = chess_piece.Bishop(WHITE, 7, 5)
 WHITE_KNIGHT_2 = chess_piece.Knight(WHITE, 7, 6)
 WHITE_ROOK_2 = chess_piece.Rook(WHITE, 7, 7)
 WHITE_PAWNS = [chess_piece.Pawn(WHITE, 7, i) for i in range(8)]
-EMPTY_ROW = [EMPTY] * 8
+
+EMPTY_ROW_1 = [chess_piece.Empty(2, i) for i in range(8)]
+EMPTY_ROW_2 = [chess_piece.Empty(3, i) for i in range(8)]
+EMPTY_ROW_3 = [chess_piece.Empty(4, i) for i in range(8)]
+EMPTY_ROW_4 = [chess_piece.Empty(5, i) for i in range(8)]
 
 BLACK_ROW_1 = [BLACK_ROOK_1, BLACK_KNIGHT_1, BLACK_BISHOP_1, BLACK_QUEENS[0], BLACK_KING,
                BLACK_BISHOP_2, BLACK_KNIGHT_2, BLACK_ROOK_2]
@@ -48,13 +50,14 @@ class GameState:
         self.black_pieces = BLACK_ROW_1 + BLACK_ROW_2
         self.white_pieces = WHITE_ROW_1 + WHITE_ROW_2
         self.board = array(
-            [BLACK_ROW_1, BLACK_ROW_2, EMPTY_ROW, EMPTY_ROW,
-             EMPTY_ROW, EMPTY_ROW, WHITE_ROW_1, WHITE_ROW_2])
+            [BLACK_ROW_1, BLACK_ROW_2, EMPTY_ROW_1, EMPTY_ROW_2,
+             EMPTY_ROW_3, EMPTY_ROW_4, WHITE_ROW_1, WHITE_ROW_2])
 
     def make_move(self, move):
         piece = move.piece_moved
         piece.set_position(move.dst_row, move.dst_col)
-        self.board[move.source_row][move.source_col] = chess_piece.Empty()  # Cleans source square
+        src_col, src_row = move.source_row, move.source_col
+        self.board[src_col][src_row] = chess_piece.Empty(src_col, src_row)  # Cleans source square
         self.board[move.dst_row][move.dst_col] = piece  # Moves piece to destination square
         self.move_log.append(move)
 
@@ -65,8 +68,23 @@ class GameState:
             piece.set_position(move.source_row, move.source_col)
             self.board[move.source_row][move.source_col] = piece  # Returns piece
             self.board[move.dst_row][move.dst_col] = move.piece_captured
+            return move
 
-    def caused_check(self):
+    def pre_conditions(self, is_white_turn, this_color, other_color, to_print=True):
+        correct_color = self.right_color(is_white_turn, this_color)
+        eat_opponent_or_empty = this_color != other_color
+
+        if not correct_color:
+            if to_print:
+                print("ERROR: not your turn.")
+            return False
+        elif not eat_opponent_or_empty:
+            if to_print:
+                print("ERROR: can not eat your own piece.")
+            return False
+        return True
+
+    def check(self):
         if self.is_white_turn:
             for piece in self.black_pieces:
                 if piece.is_check(WHITE_KING.get_position(), self.board, piece.get_position()):
@@ -77,6 +95,39 @@ class GameState:
                 if piece.is_check(BLACK_KING.get_position(), self.board, piece.get_position()):
                     return True
             return False
+
+    def mate(self):
+        king_options = ((1, 0), (1, 1), (0, 1), (-1, 0),
+                        (-1, -1), (0, -1), (1, -1), (-1, 1))
+        if self.is_white_turn:
+            king = WHITE_KING
+        else:
+            king = BLACK_KING
+
+        self.undo_move()
+        # check if king can not move to any square.
+        king_x, king_y = king.get_position()
+        for opt in king_options:
+            #  if not a valid square, skip to next option.
+            if (king_x + opt[0] < 0 or king_x + opt[0] > 7) or (
+                    king_y + opt[1] < 0 or king_y + opt[1] > 7):
+                continue
+
+            #  if it does not meet the preconditions, skip to next option.
+            dst_square = self.board[king_x + opt[0]][king_y + opt[1]]
+            if not self.pre_conditions(True, WHITE, dst_square.get_color(), False):
+                continue
+
+            move = Move(king.get_position(), (king_x + opt[0], king_y + opt[1]), self.board)
+            self.make_move(move)
+            #  if destination square is threatened, skip to next option.
+            if self.check():
+                self.undo_move()
+                continue
+            else:
+                self.undo_move()
+                return False  # not mate.
+        return True
 
     def castle(self, king, rook):
         if king.has_moved:
@@ -108,7 +159,7 @@ class GameState:
         for x in range(first_x, second_x):
             move = Move(king_location, (king_y, x), self.board)
             self.make_move(move)
-            if self.caused_check():
+            if self.check():
                 for x_0 in range(x):
                     self.undo_move()
                 print("ERROR: can not castling, square ({},{}) is threatened.".format(king_y, x))
@@ -134,6 +185,13 @@ class GameState:
         else:
             BLACK_QUEENS.append(queen)
         return queen
+
+    @staticmethod
+    def right_color(is_white_turn, color):
+        if (is_white_turn and not color == WHITE) or (
+                not is_white_turn and not color == BLACK):
+            return False
+        return True
 
 
 class Move:
