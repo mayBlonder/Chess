@@ -21,5 +21,5 @@
 </code></pre>
 <ul>
 <h2 class="code-line" data-line-start=15 data-line-end=16 ><a id="Mate_26"></a>Mate</h2>
-<li class="has-line-data" data-line-start="8" data-line-end="9">When a player reach mate the other player should try to move a piece and than a winner message will be displayed!.</li>
+<li class="has-line-data" data-line-start="8" data-line-end="9">When a player reaches mate the other player should try to move a piece and than a winner message will be displayed!.</li>
 </ul>
