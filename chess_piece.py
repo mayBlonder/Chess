@@ -53,11 +53,14 @@ class ChessPiece:
     def is_piece_in_the_way_diagonal(x_src, x_dst, y_src, y_dst, board):
         x_direction = 1 if x_src < x_dst else -1
         y_direction = 1 if y_src < y_dst else -1
+
         x_src += x_direction
         y_src += y_direction
-        while x_src <= x_dst + x_direction and y_src <= y_dst + y_direction:
-            if not isinstance(board[x_src][y_src], Empty):
-                return True, board[x_src][y_src]
+        while (x_src * x_direction <= x_dst * x_direction) and (
+                y_src * y_direction <= y_dst * y_direction):
+            square = board[x_src][y_src]
+            if not isinstance(square, Empty):
+                return True, square
             x_src += x_direction
             y_src += y_direction
         return False, Empty
