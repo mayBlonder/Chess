@@ -1,5 +1,7 @@
 # TODO
-# mate
+# Mate - (king cannot move) or (there is no piece that can protect the king)
+# (king cannot move) V
+
 
 """
 Handling user input and displaying current game state.
@@ -113,7 +115,7 @@ def main():
                     move_to = game_state.board[dst_row][dst_col]
                     color = piece_to_move.get_color()
 
-                    if not game_state.pre_conditions(game_state.is_white_turn, color, move_to.get_color()):
+                    if not game_state.pre_conditions(move_to.get_color()):
                         square_selected, player_clicks = (), []
                         continue
 

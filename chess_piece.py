@@ -19,6 +19,9 @@ class ChessPiece:
     def is_valid_move(self, board, from_square, to_square):
         pass
 
+    def get_all_moves(self, board):
+        return []
+
     def is_check(self, king_position, board, from_square):
         if not self.is_valid_move(board, from_square, king_position):
             return False
@@ -42,6 +45,34 @@ class ChessPiece:
                 if not isinstance(board[x_src][row], Empty):
                     return True, board[x_src][row]
         return False, Empty
+
+    def all_moves_straight(self):
+        x, y = self.get_position()
+        moves = []
+        for row in range(x, 7):
+            moves.append((row, y))
+
+        for row in range(0, x):
+            moves.append((row, y))
+
+        for col in range(y, 7):
+            moves.append((x, col))
+
+        for col in range(0, y):
+            moves.append((x, col))
+
+        return moves
+
+    def all_moves_diagonal(self):
+        x, y = self.get_position()
+        moves = []
+        for i in range(8):
+            moves.append((x + i, y + i))
+            moves.append((x + i, y - i))
+            moves.append((x - i, y + i))
+            moves.append((x - i, y - i))
+
+        return moves
 
     @staticmethod
     def order(first, second):
@@ -95,6 +126,15 @@ class Rook(ChessPiece):
         self.has_moved = True
         return True
 
+    # def get_all_moves(self, board):
+    #     x, y = self.get_position()
+    #     moves = self.all_moves_straight()
+    #     valid_moves = []
+    #     for move in moves:
+    #         if self.is_valid_move(board, (x, y), move):
+    #             valid_moves.append(move)
+    #     return valid_moves
+
 
 class Knight(ChessPiece):
     def __init__(self, color, row, col):
@@ -111,6 +151,18 @@ class Knight(ChessPiece):
 
     def is_check(self, king_position, board, from_square):
         return self.is_valid_move(board, from_square, king_position)
+
+    def get_all_moves(self, board):
+        x, y = self.get_position()
+        valid_moves = []
+        moves = [(x + 1, y + 2), (x - 1, y - 2), (x - 1, y + 2),
+                 (x + 1, y - 2), (x + 2, y + 1), (x - 2, y - 1),
+                 (x - 2, y + 1), (x + 2, y - 1)]
+        # remove all options that there is a piece in the way.
+        for move in moves:
+            if self.is_valid_move(board, (x, y), move):
+                valid_moves.append(move)
+        return valid_moves
 
 
 class Bishop(ChessPiece):
@@ -136,6 +188,15 @@ class Bishop(ChessPiece):
             if not self.is_piece_in_the_way_diagonal(x_src, x_dst, y_src, y_dst, board)[0]:
                 return True
         return False
+
+    # def get_all_moves(self, board):
+    #     x, y = self.get_position()
+    #     moves = self.all_moves_diagonal()
+    #     valid_moves = []
+    #     for move in moves:
+    #         if self.is_valid_move(board, (x, y), move):
+    #             valid_moves.append(move)
+    #     return valid_moves
 
 
 class Queen(ChessPiece):
@@ -167,6 +228,15 @@ class Queen(ChessPiece):
                 return True
         return False
 
+    # def get_all_moves(self, board):
+    #     x, y = self.get_position()
+    #     moves = self.all_moves_diagonal() + self.all_moves_straight()
+    #     valid_moves = []
+    #     for move in moves:
+    #         if self.is_valid_move(board, (x, y), move):
+    #             valid_moves.append(move)
+    #     return valid_moves
+
 
 class King(ChessPiece):
     def __init__(self, color, row, col):
@@ -189,17 +259,35 @@ class King(ChessPiece):
             return True
         return False
 
+    def get_all_moves(self, board):
+        x, y = self.get_position()
+        king_options = ((1, 0), (1, 1), (0, 1), (-1, 0),
+                        (-1, -1), (0, -1), (1, -1), (-1, 1))
+        moves = []
+        valid_moves = []
+        for opt in king_options:
+            moves.append((x + opt[0], y + opt[1]))
+
+        for move in moves:
+            if self.is_valid_move(board, (x, y), move):
+                valid_moves.append(move)
+        return valid_moves
+
 
 class Pawn(ChessPiece):
     def __init__(self, color, row, col):
         super().__init__(color, row, col)
         self.has_moved = False
+        if color == WHITE:
+            self.eat = ((1, 1), (1, -1))
+            self.moves = ((-1, 0), (-2, 0))
+        else:
+            self.eat = ((-1, 1), (-1, -1))
+            self.moves = ((1, 0), (2, 0))
 
     def is_valid_move(self, board, from_square, to_square):
         src = Position(from_square[0], from_square[1])
         dst = Position(to_square[0], to_square[1])
-        eat_white = ((1, 1), (1, -1))
-        eat_black = ((-1, 1), (-1, -1))
         to_piece = board[to_square[0]][to_square[1]]
 
         if (src - dst == (1, 0) and self.get_color() == WHITE) or (
@@ -221,12 +309,23 @@ class Pawn(ChessPiece):
                         self.has_moved = True
                         return True
 
-        elif (src - dst in eat_white and self.get_color() == WHITE) or (
-                src - dst in eat_black and self.get_color() == BLACK):  # Eat diagonal
+        elif src - dst in self.eat:
             if not isinstance(to_piece, Empty):  # There is a piece to eat
                 self.has_moved = True
                 return True
         return False
+
+    # def get_all_moves(self, board):
+    #     x, y = self.get_position()
+    #     moves = []
+    #     valid_moves = []
+    #     for opt in self.moves:
+    #         moves.append((x + opt[0], y + opt[1]))
+    #
+    #     for move in moves:
+    #         if self.is_valid_move(board, (x, y), move):
+    #             valid_moves.append(move)
+    #     return valid_moves
 
 
 class Position:
@@ -238,4 +337,3 @@ class Position:
         row = self.row - other.row
         col = self.col - other.col
         return col, row
-

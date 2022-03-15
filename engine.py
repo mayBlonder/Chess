@@ -70,8 +70,9 @@ class GameState:
             self.board[move.dst_row][move.dst_col] = move.piece_captured
             return move
 
-    def pre_conditions(self, is_white_turn, this_color, other_color, to_print=True):
-        correct_color = self.right_color(is_white_turn, this_color)
+    def pre_conditions(self, other_color, to_print=True):
+        this_color = WHITE if self.is_white_turn else BLACK
+        correct_color = self.right_color(self.is_white_turn, this_color)
         eat_opponent_or_empty = this_color != other_color
 
         if not correct_color:
@@ -97,36 +98,41 @@ class GameState:
             return False
 
     def mate(self):
-        king_options = ((1, 0), (1, 1), (0, 1), (-1, 0),
-                        (-1, -1), (0, -1), (1, -1), (-1, 1))
         if self.is_white_turn:
-            king = WHITE_KING
+            pieces = self.white_pieces
         else:
-            king = BLACK_KING
-
+            pieces = self.black_pieces
         self.undo_move()
-        # check if king can not move to any square.
-        king_x, king_y = king.get_position()
-        for opt in king_options:
-            #  if not a valid square, skip to next option.
-            if (king_x + opt[0] < 0 or king_x + opt[0] > 7) or (
-                    king_y + opt[1] < 0 or king_y + opt[1] > 7):
-                continue
 
-            #  if it does not meet the preconditions, skip to next option.
-            dst_square = self.board[king_x + opt[0]][king_y + opt[1]]
-            if not self.pre_conditions(True, WHITE, dst_square.get_color(), False):
-                continue
+        for piece in pieces:
+            print(piece.__class__.__name__)
+            for move in piece.get_all_moves(self.board):
+                print(move)
+                # if going beyond the boundaries of the board
+                dst_row, dst_col = move
+                if (dst_row < 0 or dst_row > 7) or (
+                        dst_col < 0 or dst_col > 7):
+                    continue
 
-            move = Move(king.get_position(), (king_x + opt[0], king_y + opt[1]), self.board)
-            self.make_move(move)
-            #  if destination square is threatened, skip to next option.
-            if self.check():
-                self.undo_move()
-                continue
-            else:
-                self.undo_move()
-                return False  # not mate.
+                print("not outside board.")
+
+                dst_square = self.board[dst_row][dst_col]
+                if not self.pre_conditions(dst_square.get_color(), to_print=False):
+                    continue
+
+                print("preconditions.")
+
+                move = Move(piece.get_position(), (dst_row, dst_col), self.board)
+                self.make_move(move)
+                if self.check():
+                    print("check")
+                    self.undo_move()
+                    continue
+                else:
+                    self.undo_move()
+                    print("not mate.")
+                    return False  # not mate
+            print("#############################")
         return True
 
     def castle(self, king, rook):
