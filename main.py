@@ -1,6 +1,5 @@
 # TODO
-# Mate - (king cannot move) or (there is no piece that can protect the king)
-# (king cannot move) V
+# Mate - not mate if can capture piece.
 
 
 """
@@ -115,7 +114,7 @@ def main():
                     move_to = game_state.board[dst_row][dst_col]
                     color = piece_to_move.get_color()
 
-                    if not game_state.pre_conditions(move_to.get_color()):
+                    if not game_state.pre_conditions(color, move_to.get_color()):
                         square_selected, player_clicks = (), []
                         continue
 
@@ -140,11 +139,14 @@ def main():
                                 winner_pic = p.transform.scale(p.image.load(pic_path), (WIDTH, HEIGHT))
                                 screen.blit(winner_pic, (0, 0))
                                 p.display.flip()
-                                time.sleep(3)
+                                #  TODO: change
+                                # time.sleep(5)
+                                time.sleep(30)
                                 print("MATE: the winner is: {}!".format(int_color_to_string(winner_color)))
                                 running = False
                                 continue
                             else:
+                                # TODO: need to redo move because in mate made undo_move?
                                 print("ERROR: this move is causing your king to be in check.")
                                 square_selected, player_clicks = (), []
                                 continue

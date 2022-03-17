@@ -22,6 +22,16 @@ class ChessPiece:
     def get_all_moves(self, board):
         return []
 
+    def get_all_valid_moves(self, board, src_row, src_col, moves):
+        valid_moves = []
+        for move in moves:
+            row, col = src_row + move[0], src_col + move[1]
+            if not (0 <= row < 8 and 0 <= col < 8):
+                continue
+            if self.is_valid_move(board, (src_row, src_col), (row, col)):
+                valid_moves.append((row, col))
+        return valid_moves
+
     def is_check(self, king_position, board, from_square):
         if not self.is_valid_move(board, from_square, king_position):
             return False
@@ -34,43 +44,37 @@ class ChessPiece:
         return False
 
     def is_piece_in_the_way_straight(self, board, x_src, x_dst, y_src, y_dst):
-        if y_src == y_dst:  # Checking if there is a piece in the way.
+        if y_src == y_dst:
             x_src, x_dst = self.order(x_src, x_dst)
             for col in range(x_src, x_dst):
                 if not isinstance(board[col][y_src], Empty):
                     return True, board[col][y_src]
-        elif x_src == x_dst:  # Checking if there is a piece in the way.
+        elif x_src == x_dst:
             y_src, y_dst = self.order(y_src, y_dst)
             for row in range(y_src, y_dst):
                 if not isinstance(board[x_src][row], Empty):
                     return True, board[x_src][row]
         return False, Empty
 
-    def all_moves_straight(self):
-        x, y = self.get_position()
+    @staticmethod
+    def all_moves_straight():
         moves = []
-        for row in range(x, 7):
-            moves.append((row, y))
-
-        for row in range(0, x):
-            moves.append((row, y))
-
-        for col in range(y, 7):
-            moves.append((x, col))
-
-        for col in range(0, y):
-            moves.append((x, col))
+        for adding in range(1, 8):
+            moves.append((adding, 0))
+            moves.append((-adding, 0))
+            moves.append((0, adding))
+            moves.append((0, -adding))
 
         return moves
 
-    def all_moves_diagonal(self):
-        x, y = self.get_position()
+    @staticmethod
+    def all_moves_diagonal():
         moves = []
-        for i in range(8):
-            moves.append((x + i, y + i))
-            moves.append((x + i, y - i))
-            moves.append((x - i, y + i))
-            moves.append((x - i, y - i))
+        for i in range(1, 8):
+            moves.append((i, i))
+            moves.append((i, i))
+            moves.append((-i, i))
+            moves.append((-i, -i))
 
         return moves
 
@@ -82,13 +86,15 @@ class ChessPiece:
 
     @staticmethod
     def is_piece_in_the_way_diagonal(x_src, x_dst, y_src, y_dst, board):
-        x_direction = 1 if x_src < x_dst else -1
+        x_direction = -1 if x_src < x_dst else 1
         y_direction = 1 if y_src < y_dst else -1
 
         x_src += x_direction
         y_src += y_direction
+
         while (x_src * x_direction <= x_dst * x_direction) and (
-                y_src * y_direction <= y_dst * y_direction):
+                y_src * y_direction <= y_dst * y_direction) and (
+                0 <= x_src < 8) and (0 <= y_src < 8):
             square = board[x_src][y_src]
             if not isinstance(square, Empty):
                 return True, square
@@ -110,9 +116,6 @@ class Rook(ChessPiece):
         super().__init__(color, row, col)
         self.has_moved = False
 
-    def set_has_moved(self, has_moved):
-        self.has_moved = has_moved
-
     def is_valid_move(self, board, from_square, to_square):
         x_src, y_src = from_square
         x_dst, y_dst = to_square
@@ -126,14 +129,10 @@ class Rook(ChessPiece):
         self.has_moved = True
         return True
 
-    # def get_all_moves(self, board):
-    #     x, y = self.get_position()
-    #     moves = self.all_moves_straight()
-    #     valid_moves = []
-    #     for move in moves:
-    #         if self.is_valid_move(board, (x, y), move):
-    #             valid_moves.append(move)
-    #     return valid_moves
+    def get_all_moves(self, board):
+        moves = self.all_moves_straight()
+        src_row, src_col = self.get_position()
+        return super().get_all_valid_moves(board, src_row, src_col, moves)
 
 
 class Knight(ChessPiece):
@@ -153,16 +152,12 @@ class Knight(ChessPiece):
         return self.is_valid_move(board, from_square, king_position)
 
     def get_all_moves(self, board):
-        x, y = self.get_position()
-        valid_moves = []
-        moves = [(x + 1, y + 2), (x - 1, y - 2), (x - 1, y + 2),
-                 (x + 1, y - 2), (x + 2, y + 1), (x - 2, y - 1),
-                 (x - 2, y + 1), (x + 2, y - 1)]
-        # remove all options that there is a piece in the way.
-        for move in moves:
-            if self.is_valid_move(board, (x, y), move):
-                valid_moves.append(move)
-        return valid_moves
+        src_row, src_col = self.get_position()
+        moves = [(1, 2), (-1, -2), (-1, 2),
+                 (1, -2), (2, 1), (-2, -1),
+                 (-2, 1), (2, -1)]
+
+        return super().get_all_valid_moves(board, src_row, src_col, moves)
 
 
 class Bishop(ChessPiece):
@@ -189,14 +184,10 @@ class Bishop(ChessPiece):
                 return True
         return False
 
-    # def get_all_moves(self, board):
-    #     x, y = self.get_position()
-    #     moves = self.all_moves_diagonal()
-    #     valid_moves = []
-    #     for move in moves:
-    #         if self.is_valid_move(board, (x, y), move):
-    #             valid_moves.append(move)
-    #     return valid_moves
+    def get_all_moves(self, board):
+        src_row, src_col = self.get_position()
+        moves = self.all_moves_diagonal()
+        return super().get_all_valid_moves(board, src_row, src_col, moves)
 
 
 class Queen(ChessPiece):
@@ -228,14 +219,10 @@ class Queen(ChessPiece):
                 return True
         return False
 
-    # def get_all_moves(self, board):
-    #     x, y = self.get_position()
-    #     moves = self.all_moves_diagonal() + self.all_moves_straight()
-    #     valid_moves = []
-    #     for move in moves:
-    #         if self.is_valid_move(board, (x, y), move):
-    #             valid_moves.append(move)
-    #     return valid_moves
+    def get_all_moves(self, board):
+        src_row, src_col = self.get_position()
+        moves = self.all_moves_diagonal() + self.all_moves_straight()
+        return super().get_all_valid_moves(board, src_row, src_col, moves)
 
 
 class King(ChessPiece):
@@ -243,9 +230,6 @@ class King(ChessPiece):
         super().__init__(color, row, col)
         self.has_moved = False
         self.in_check = False
-
-    def set_has_moved(self, has_moved):
-        self.has_moved = has_moved
 
     def set_in_check(self, in_check):
         self.in_check = in_check
@@ -260,18 +244,10 @@ class King(ChessPiece):
         return False
 
     def get_all_moves(self, board):
-        x, y = self.get_position()
-        king_options = ((1, 0), (1, 1), (0, 1), (-1, 0),
-                        (-1, -1), (0, -1), (1, -1), (-1, 1))
-        moves = []
-        valid_moves = []
-        for opt in king_options:
-            moves.append((x + opt[0], y + opt[1]))
-
-        for move in moves:
-            if self.is_valid_move(board, (x, y), move):
-                valid_moves.append(move)
-        return valid_moves
+        src_row, src_col = self.get_position()
+        moves = ((1, 0), (1, 1), (0, 1), (-1, 0),
+                 (-1, -1), (0, -1), (1, -1), (-1, 1))
+        return super().get_all_valid_moves(board, src_row, src_col, moves)
 
 
 class Pawn(ChessPiece):
@@ -315,17 +291,10 @@ class Pawn(ChessPiece):
                 return True
         return False
 
-    # def get_all_moves(self, board):
-    #     x, y = self.get_position()
-    #     moves = []
-    #     valid_moves = []
-    #     for opt in self.moves:
-    #         moves.append((x + opt[0], y + opt[1]))
-    #
-    #     for move in moves:
-    #         if self.is_valid_move(board, (x, y), move):
-    #             valid_moves.append(move)
-    #     return valid_moves
+    def get_all_moves(self, board):
+        src_row, src_col = self.get_position()
+        moves = self.moves + self.eat
+        return super().get_all_valid_moves(board, src_row, src_col, moves)
 
 
 class Position:

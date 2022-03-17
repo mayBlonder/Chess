@@ -26,7 +26,7 @@ WHITE_KING = chess_piece.King(WHITE, 7, 4)
 WHITE_BISHOP_2 = chess_piece.Bishop(WHITE, 7, 5)
 WHITE_KNIGHT_2 = chess_piece.Knight(WHITE, 7, 6)
 WHITE_ROOK_2 = chess_piece.Rook(WHITE, 7, 7)
-WHITE_PAWNS = [chess_piece.Pawn(WHITE, 7, i) for i in range(8)]
+WHITE_PAWNS = [chess_piece.Pawn(WHITE, 6, i) for i in range(8)]
 
 EMPTY_ROW_1 = [chess_piece.Empty(2, i) for i in range(8)]
 EMPTY_ROW_2 = [chess_piece.Empty(3, i) for i in range(8)]
@@ -70,8 +70,7 @@ class GameState:
             self.board[move.dst_row][move.dst_col] = move.piece_captured
             return move
 
-    def pre_conditions(self, other_color, to_print=True):
-        this_color = WHITE if self.is_white_turn else BLACK
+    def pre_conditions(self, this_color, other_color, to_print=True):
         correct_color = self.right_color(self.is_white_turn, this_color)
         eat_opponent_or_empty = this_color != other_color
 
@@ -100,39 +99,28 @@ class GameState:
     def mate(self):
         if self.is_white_turn:
             pieces = self.white_pieces
+            color = WHITE
         else:
             pieces = self.black_pieces
+            color = BLACK
         self.undo_move()
 
         for piece in pieces:
-            print(piece.__class__.__name__)
             for move in piece.get_all_moves(self.board):
-                print(move)
                 # if going beyond the boundaries of the board
                 dst_row, dst_col = move
-                if (dst_row < 0 or dst_row > 7) or (
-                        dst_col < 0 or dst_col > 7):
-                    continue
-
-                print("not outside board.")
-
                 dst_square = self.board[dst_row][dst_col]
-                if not self.pre_conditions(dst_square.get_color(), to_print=False):
+                if not self.pre_conditions(color, dst_square.get_color(), to_print=False):
                     continue
-
-                print("preconditions.")
 
                 move = Move(piece.get_position(), (dst_row, dst_col), self.board)
                 self.make_move(move)
                 if self.check():
-                    print("check")
                     self.undo_move()
                     continue
                 else:
                     self.undo_move()
-                    print("not mate.")
                     return False  # not mate
-            print("#############################")
         return True
 
     def castle(self, king, rook):
