@@ -2,7 +2,6 @@
 Restoring all the data of a game and determining the valid moves.
 """
 
-from numpy import array
 import chess_piece
 
 WHITE = 0
@@ -49,9 +48,8 @@ class GameState:
         self.move_log = []
         self.black_pieces = BLACK_ROW_1 + BLACK_ROW_2
         self.white_pieces = WHITE_ROW_1 + WHITE_ROW_2
-        self.board = array(
-            [BLACK_ROW_1, BLACK_ROW_2, EMPTY_ROW_1, EMPTY_ROW_2,
-             EMPTY_ROW_3, EMPTY_ROW_4, WHITE_ROW_1, WHITE_ROW_2])
+        self.board = [BLACK_ROW_1, BLACK_ROW_2, EMPTY_ROW_1, EMPTY_ROW_2,
+                      EMPTY_ROW_3, EMPTY_ROW_4, WHITE_ROW_1, WHITE_ROW_2]
 
     def make_move(self, move):
         piece = move.piece_moved
@@ -71,6 +69,11 @@ class GameState:
             return move
 
     def pre_conditions(self, this_color, other_color, to_print=True):
+        """
+        Checks if the piece chosen is the right color- if it's turn,
+        also checks that a player is not trying to eat his own piece.
+        :return: True if meets the conditions.
+        """
         correct_color = self.right_color(self.is_white_turn, this_color)
         eat_opponent_or_empty = this_color != other_color
 
@@ -85,6 +88,9 @@ class GameState:
         return True
 
     def check(self):
+        """
+        :return: True if there is a piece that checks the king, else, False
+        """
         if self.is_white_turn:
             for piece in self.black_pieces:
                 if piece.is_check(WHITE_KING.get_position(), self.board, piece.get_position()):
@@ -97,6 +103,9 @@ class GameState:
             return False
 
     def mate(self):
+        """
+        :return: True if king is in mate, else: False.
+        """
         if self.is_white_turn:
             pieces = self.white_pieces
             color = WHITE
@@ -107,7 +116,6 @@ class GameState:
 
         for piece in pieces:
             for move in piece.get_all_moves(self.board):
-                # if going beyond the boundaries of the board
                 dst_row, dst_col = move
                 dst_square = self.board[dst_row][dst_col]
                 if not self.pre_conditions(color, dst_square.get_color(), to_print=False):
@@ -124,6 +132,10 @@ class GameState:
         return True
 
     def castle(self, king, rook):
+        """
+        Makes the castling move if it's legal.
+        :return: void
+        """
         if king.has_moved:
             print("ERROR: can not castling, king has moved.")
             return
@@ -160,10 +172,10 @@ class GameState:
                 return
             king_location = king.get_position()
 
-        # if success - move rook also.
+        # If success - move rook also.
         if rook_x == 7:
             rook_target_x = 5
-        else:  # rook_x == 0
+        else:  # If rook_x == 0
             move = Move(king_location, (king_y, 2), self.board)
             self.make_move(move)
             rook_target_x = 3
@@ -173,6 +185,10 @@ class GameState:
 
     @staticmethod
     def add_queen(color, row, col):
+        """
+        Creates a new queen in case there is a pawn promotion.
+        :return: A new queen.
+        """
         queen = chess_piece.Queen(color, row, col)
         if color == WHITE:
             WHITE_QUEENS.append(queen)
@@ -182,6 +198,9 @@ class GameState:
 
     @staticmethod
     def right_color(is_white_turn, color):
+        """
+        :return: True if the color of the piece and who turn it is are corresponding.
+        """
         if (is_white_turn and not color == WHITE) or (
                 not is_white_turn and not color == BLACK):
             return False
@@ -190,16 +209,8 @@ class GameState:
 
 class Move:
     def __init__(self, src_square, dst_square, board):
-        self.source_row = src_square[0]
-        self.source_col = src_square[1]
-        self.dst_row = dst_square[0]
-        self.dst_col = dst_square[1]
+        self.source_row,  self.source_col = src_square
+        self.dst_row, self.dst_col = dst_square
         self.board = board
         self.piece_moved = board[self.source_row][self.source_col]
         self.piece_captured = board[self.dst_row][self.dst_col]
-        self.move_id = self.source_row * 1000 + self.source_col * 100 + self.dst_row * 10 + self.dst_col
-
-    def __eq__(self, other):
-        if isinstance(other, Move):
-            return self.move_id == other.move_id
-        return False

@@ -1,14 +1,9 @@
-# TODO
-# Mate - not mate if can capture piece.
-
 
 """
 Handling user input and displaying current game state.
 """
 import time
-
 import pygame as p
-
 from chess_piece import Pawn, Empty, King
 from engine import *
 
@@ -26,10 +21,16 @@ pieces = [BLACK_ROOK_1, BLACK_ROOK_2, BLACK_KNIGHT_1, BLACK_KNIGHT_2,
 
 
 def int_color_to_string(color):
+    """
+    :return: A string representing the color of a piece.
+    """
     return "white" if color == 0 else "black"
 
 
 def load_images():
+    """
+    Adds to a dictionary where the key is a piece and the value is a picture of the piece.
+    """
     for piece in pieces:
         pic_path = "pics\\" + int_color_to_string(piece.get_color()) + "_"
         pic_path += piece.__class__.__name__.lower() + ".png"
@@ -39,6 +40,9 @@ def load_images():
 
 #  responsible for all the graphics
 def draw_game_state(screen, game_state):
+    """
+    Draws on the screen the board and the pieces.
+    """
     colors = [p.Color("white"), p.Color("light blue")]
     for row in range(DIMENSION):
         for col in range(DIMENSION):
@@ -51,6 +55,9 @@ def draw_game_state(screen, game_state):
 
 
 def change_pawn_to_queen(screen, row, col, color, game_state):
+    """
+    Replaces a pawn for a queen when pawn promotion is needed.
+    """
     location = p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
     queen = game_state.add_queen(color, row, col)
 
@@ -65,6 +72,9 @@ def change_pawn_to_queen(screen, row, col, color, game_state):
 
 
 def castling(game_state, dst_col, color, piece_to_move):
+    """
+    Calls the castling function with the right rook.
+    """
     if dst_col == 2:
         if color == WHITE:
             game_state.castle(piece_to_move, WHITE_ROOK_1)
@@ -132,24 +142,21 @@ def main():
 
                         game_state.make_move(move)
                         if game_state.check():
-                            # if mate
                             if game_state.mate():
                                 winner_color = not move.piece_moved.get_color()
                                 pic_path = "pics\\winner_" + int_color_to_string(winner_color) + ".png"
                                 winner_pic = p.transform.scale(p.image.load(pic_path), (WIDTH, HEIGHT))
                                 screen.blit(winner_pic, (0, 0))
                                 p.display.flip()
-                                #  TODO: change
-                                # time.sleep(5)
-                                time.sleep(30)
+                                time.sleep(5)
                                 print("MATE: the winner is: {}!".format(int_color_to_string(winner_color)))
                                 running = False
                                 continue
                             else:
-                                # TODO: need to redo move because in mate made undo_move?
                                 print("ERROR: this move is causing your king to be in check.")
                                 square_selected, player_clicks = (), []
                                 continue
+                        # If pawn promotion is needed
                         elif isinstance(piece_to_move, Pawn):
                             color = piece_to_move.get_color()
                             if (color == WHITE and dst_row == 0) or (

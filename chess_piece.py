@@ -20,9 +20,13 @@ class ChessPiece:
         pass
 
     def get_all_moves(self, board):
-        return []
+        pass
 
     def get_all_valid_moves(self, board, src_row, src_col, moves):
+        """
+        :param moves: All possible moves the piece can do.
+        :return: All valid moves the piece can do from square (src_row, src_col).
+        """
         valid_moves = []
         for move in moves:
             row, col = src_row + move[0], src_col + move[1]
@@ -33,6 +37,10 @@ class ChessPiece:
         return valid_moves
 
     def is_check(self, king_position, board, from_square):
+        """
+        :param from_square: pieces location.
+        :return: True if piece is threatening the king, else False.
+        """
         if not self.is_valid_move(board, from_square, king_position):
             return False
 
@@ -44,6 +52,10 @@ class ChessPiece:
         return False
 
     def is_piece_in_the_way_straight(self, board, x_src, x_dst, y_src, y_dst):
+        """
+        :return: True if there is a piece in the straight way
+        between (x_src, y_src) and (x_dst, y_dst).
+        """
         if y_src == y_dst:
             x_src, x_dst = self.order(x_src, x_dst)
             for col in range(x_src, x_dst):
@@ -58,6 +70,9 @@ class ChessPiece:
 
     @staticmethod
     def all_moves_straight():
+        """
+        :return: All possible moves for a piece that is going straight.
+        """
         moves = []
         for adding in range(1, 8):
             moves.append((adding, 0))
@@ -69,6 +84,9 @@ class ChessPiece:
 
     @staticmethod
     def all_moves_diagonal():
+        """
+        :return: All possible moves for a piece that is going diagonal.
+        """
         moves = []
         for i in range(1, 8):
             moves.append((i, i))
@@ -80,21 +98,28 @@ class ChessPiece:
 
     @staticmethod
     def order(first, second):
+        """
+        Puts in first the smallest value between the two variables and ands one.
+        And puts the bigger value in second.
+        """
         if first < second:
             return first + 1, second
         return second + 1, first
 
     @staticmethod
     def is_piece_in_the_way_diagonal(x_src, x_dst, y_src, y_dst, board):
-        x_direction = -1 if x_src < x_dst else 1
+        """
+        Checks diagonally if there is a chess piece between the source and
+        destination board positions and returns True and the piece if there is.
+        """
+        x_direction = 1 if x_src < x_dst else -1
         y_direction = 1 if y_src < y_dst else -1
 
         x_src += x_direction
         y_src += y_direction
 
-        while (x_src * x_direction <= x_dst * x_direction) and (
-                y_src * y_direction <= y_dst * y_direction) and (
-                0 <= x_src < 8) and (0 <= y_src < 8):
+        while ((0 <= x_src < 8) and (0 <= y_src < 8) and
+               (x_src != x_dst) and (y_src != y_dst)):
             square = board[x_src][y_src]
             if not isinstance(square, Empty):
                 return True, square
@@ -266,16 +291,20 @@ class Pawn(ChessPiece):
         dst = Position(to_square[0], to_square[1])
         to_piece = board[to_square[0]][to_square[1]]
 
+        # One step
         if (src - dst == (1, 0) and self.get_color() == WHITE) or (
-                dst - src == (1, 0) and self.get_color() == BLACK):  # One step up
-            if isinstance(to_piece, Empty):  # No piece in dst square
+                dst - src == (1, 0) and self.get_color() == BLACK):
+            # No piece in destination square
+            if isinstance(to_piece, Empty):
                 self.has_moved = True
                 return True
 
+        # Two steps
         elif (src - dst == (2, 0) and self.get_color() == WHITE) or (
                 dst - src == (2, 0) and self.get_color() == BLACK
         ):
-            if not self.has_moved:  # If pawn hasn't moved, can be moved two squares up.
+            # If pawn hasn't moved, can be moved two squares up.
+            if not self.has_moved:
                 if isinstance(to_piece, Empty):
                     if self.get_color() == WHITE:
                         in_path = board[to_square[0] + 1][to_square[1]]
@@ -284,9 +313,10 @@ class Pawn(ChessPiece):
                     if isinstance(in_path, Empty):
                         self.has_moved = True
                         return True
-
+        # Eat
         elif src - dst in self.eat:
-            if not isinstance(to_piece, Empty):  # There is a piece to eat
+            # There is a piece to eat
+            if not isinstance(to_piece, Empty):
                 self.has_moved = True
                 return True
         return False
