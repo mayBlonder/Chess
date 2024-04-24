@@ -2,23 +2,22 @@
 """
 Handling user input and displaying current game state.
 """
+import os
 import time
-import pygame as p
-from chess_piece import Pawn, Empty, King
+import pygame
+import constants
 from engine import *
+from chess_piece import Empty
+from pieces.pawn import Pawn
+from pieces.king import King
 
-IMAGES = {}
-DIMENSION = 8
-MAX_FPS = 15  # for animation
-WIDTH = HEIGHT = 512
-SQUARE_SIZE = HEIGHT // DIMENSION
 
-pieces = [BLACK_ROOK_1, BLACK_ROOK_2, BLACK_KNIGHT_1, BLACK_KNIGHT_2,
+images = {}
+PIECES = [BLACK_ROOK_1, BLACK_ROOK_2, BLACK_KNIGHT_1, BLACK_KNIGHT_2,
           BLACK_BISHOP_1, BLACK_BISHOP_2, BLACK_QUEENS[0], BLACK_KING,
           WHITE_ROOK_1, WHITE_ROOK_2, WHITE_KNIGHT_1, WHITE_KNIGHT_2,
           WHITE_BISHOP_1, WHITE_BISHOP_2, WHITE_QUEENS[0], WHITE_KING] \
          + BLACK_PAWNS + WHITE_PAWNS
-
 
 def int_color_to_string(color):
     """
@@ -27,15 +26,23 @@ def int_color_to_string(color):
     return "white" if color == 0 else "black"
 
 
+def construct_image_path(piece):
+    """
+    Constructing image path from piece color and name.
+    """
+    pic_path = os.path.join("pics", int_color_to_string(piece.get_color()) + "_")
+    pic_path += piece.__class__.__name__.lower() + ".png"
+    return pic_path
+
+
 def load_images():
     """
     Adds to a dictionary where the key is a piece and the value is a picture of the piece.
     """
-    for piece in pieces:
-        pic_path = "pics\\" + int_color_to_string(piece.get_color()) + "_"
-        pic_path += piece.__class__.__name__.lower() + ".png"
-        IMAGES[piece] = p.transform.scale(p.image.load(pic_path),
-                                          (SQUARE_SIZE, SQUARE_SIZE))
+    for piece in PIECES:
+        pic_path = construct_image_path(piece)
+        images[piece] = pygame.transform.scale(pygame.image.load(pic_path),
+                                          (constants.SQUARE_SIZE, constants.SQUARE_SIZE))
 
 
 #  responsible for all the graphics
@@ -43,32 +50,32 @@ def draw_game_state(screen, game_state):
     """
     Draws on the screen the board and the pieces.
     """
-    colors = [p.Color("white"), p.Color("light blue")]
-    for row in range(DIMENSION):
-        for col in range(DIMENSION):
+    colors = [pygame.Color("white"), pygame.Color("light blue")]
+    for row in range(constants.DIMENSION):
+        for col in range(constants.DIMENSION):
             color = colors[((row + col) % 2)]
-            location = p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
-            p.draw.rect(screen, color, location)
+            location = pygame.Rect(col * constants.SQUARE_SIZE, row * constants.SQUARE_SIZE, constants.SQUARE_SIZE, constants.SQUARE_SIZE)
+            pygame.draw.rect(screen, color, location)
             piece = game_state.board[row][col]
             if not isinstance(piece, Empty):
-                screen.blit(IMAGES[piece], location)
+                screen.blit(images[piece], location)
 
 
 def change_pawn_to_queen(screen, row, col, color, game_state):
     """
     Replaces a pawn for a queen when pawn promotion is needed.
     """
-    location = p.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+    location = pygame.Rect(col * constants.SQUARE_SIZE, row * constants.SQUARE_SIZE, constants.SQUARE_SIZE, constants.SQUARE_SIZE)
     queen = game_state.add_queen(color, row, col)
 
     # Load image
-    pic_path = "pics\\" + int_color_to_string(queen.get_color()) + "_"
-    pic_path += "queen.png"
-    IMAGES[queen] = p.transform.scale(p.image.load(pic_path),
-                                      (SQUARE_SIZE, SQUARE_SIZE))
-    screen.blit(IMAGES[queen], location)
+    pic_path = construct_image_path(queen)
+    images[queen] = pygame.transform.scale(pygame.image.load(pic_path),
+                                      (constants.SQUARE_SIZE, constants.SQUARE_SIZE))
+    
+    screen.blit(images[queen], location)
     game_state.board[row][col] = queen
-    p.display.update(location)
+    pygame.display.update(location)
 
 
 def castling(game_state, dst_col, color, piece_to_move):
@@ -88,31 +95,35 @@ def castling(game_state, dst_col, color, piece_to_move):
 
 
 def main():
-    p.init()
-    screen = p.display.set_mode((WIDTH, HEIGHT))
-    clock = p.time.Clock()
-    screen.fill(p.Color("white"))
+    pygame.init()
+    screen = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
+    clock = pygame.time.Clock()
+    screen.fill(pygame.Color("white"))
     game_state = GameState()
+    
     running = True
     load_images()
     # last click of the user : (row, col)
     square_selected = ()
     # from square to square : [(src_row, src_col), (dst_row, dst_col)]
     player_clicks = []
+    
     while running:
-        for event in p.event.get():
-            if event.type == p.QUIT:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 running = False
-            elif event.type == p.MOUSEBUTTONDOWN:
-                location = p.mouse.get_pos()  # x, y
-                dst_col = location[0] // SQUARE_SIZE
-                dst_row = location[1] // SQUARE_SIZE
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                location = pygame.mouse.get_pos()  # x, y
+                dst_col = location[0] // constants.SQUARE_SIZE
+                dst_row = location[1] // constants.SQUARE_SIZE
+                
                 # user clicked twice on the same square
                 if square_selected == (dst_row, dst_col):
                     square_selected, player_clicks = (), []
                 else:
                     square_selected = (dst_row, dst_col)
                     player_clicks.append(square_selected)
+                
                 # user's 2nd click
                 if len(player_clicks) == 2:
                     from_square = player_clicks[0]
@@ -145,9 +156,9 @@ def main():
                             if game_state.mate():
                                 winner_color = not move.piece_moved.get_color()
                                 pic_path = "pics\\winner_" + int_color_to_string(winner_color) + ".png"
-                                winner_pic = p.transform.scale(p.image.load(pic_path), (WIDTH, HEIGHT))
+                                winner_pic = pygame.transform.scale(pygame.image.load(pic_path), (constants.WIDTH, constants.HEIGHT))
                                 screen.blit(winner_pic, (0, 0))
-                                p.display.flip()
+                                pygame.display.flip()
                                 time.sleep(5)
                                 print("MATE: the winner is: {}!".format(int_color_to_string(winner_color)))
                                 running = False
@@ -167,8 +178,8 @@ def main():
                     game_state.is_white_turn = not game_state.is_white_turn  # Switch turns
                     square_selected, player_clicks = (), []
         draw_game_state(screen, game_state)
-        clock.tick(MAX_FPS)
-        p.display.flip()
+        clock.tick(constants.MAX_FPS)
+        pygame.display.flip()
 
 
 if __name__ == "__main__":

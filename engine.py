@@ -3,29 +3,35 @@ Restoring all the data of a game and determining the valid moves.
 """
 
 import chess_piece
+import pieces.bishop as bishop
+import pieces.king as king
+import pieces.knight as knight
+import pieces.pawn as pawn
+import pieces.queen as queen
+import pieces.rook as rook
 
 WHITE = 0
 BLACK = 1
 
-BLACK_ROOK_1 = chess_piece.Rook(BLACK, 0, 0)
-BLACK_KNIGHT_1 = chess_piece.Knight(BLACK, 0, 1)
-BLACK_BISHOP_1 = chess_piece.Bishop(BLACK, 0, 2)
-BLACK_QUEENS = [chess_piece.Queen(BLACK, 0, 3)]
-BLACK_KING = chess_piece.King(BLACK, 0, 4)
-BLACK_BISHOP_2 = chess_piece.Bishop(BLACK, 0, 5)
-BLACK_KNIGHT_2 = chess_piece.Knight(BLACK, 0, 6)
-BLACK_ROOK_2 = chess_piece.Rook(BLACK, 0, 7)
-BLACK_PAWNS = [chess_piece.Pawn(BLACK, 1, i) for i in range(8)]
+BLACK_ROOK_1 = rook.Rook(BLACK, 0, 0)
+BLACK_KNIGHT_1 = knight.Knight(BLACK, 0, 1)
+BLACK_BISHOP_1 = bishop.Bishop(BLACK, 0, 2)
+BLACK_QUEENS = [queen.Queen(BLACK, 0, 3)]
+BLACK_KING = king.King(BLACK, 0, 4)
+BLACK_BISHOP_2 = bishop.Bishop(BLACK, 0, 5)
+BLACK_KNIGHT_2 = knight.Knight(BLACK, 0, 6)
+BLACK_ROOK_2 = rook.Rook(BLACK, 0, 7)
+BLACK_PAWNS = [pawn.Pawn(BLACK, 1, i) for i in range(8)]
 
-WHITE_ROOK_1 = chess_piece.Rook(WHITE, 7, 0)
-WHITE_KNIGHT_1 = chess_piece.Knight(WHITE, 7, 1)
-WHITE_BISHOP_1 = chess_piece.Bishop(WHITE, 7, 2)
-WHITE_QUEENS = [chess_piece.Queen(WHITE, 7, 3)]
-WHITE_KING = chess_piece.King(WHITE, 7, 4)
-WHITE_BISHOP_2 = chess_piece.Bishop(WHITE, 7, 5)
-WHITE_KNIGHT_2 = chess_piece.Knight(WHITE, 7, 6)
-WHITE_ROOK_2 = chess_piece.Rook(WHITE, 7, 7)
-WHITE_PAWNS = [chess_piece.Pawn(WHITE, 6, i) for i in range(8)]
+WHITE_ROOK_1 = rook.Rook(WHITE, 7, 0)
+WHITE_KNIGHT_1 = knight.Knight(WHITE, 7, 1)
+WHITE_BISHOP_1 = bishop.Bishop(WHITE, 7, 2)
+WHITE_QUEENS = [queen.Queen(WHITE, 7, 3)]
+WHITE_KING = king.King(WHITE, 7, 4)
+WHITE_BISHOP_2 = bishop.Bishop(WHITE, 7, 5)
+WHITE_KNIGHT_2 = knight.Knight(WHITE, 7, 6)
+WHITE_ROOK_2 = rook.Rook(WHITE, 7, 7)
+WHITE_PAWNS = [pawn.Pawn(WHITE, 6, i) for i in range(8)]
 
 EMPTY_ROW_1 = [chess_piece.Empty(2, i) for i in range(8)]
 EMPTY_ROW_2 = [chess_piece.Empty(3, i) for i in range(8)]
